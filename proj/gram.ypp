@@ -1,0 +1,62 @@
+%{
+#include <iostream>
+#include <string>
+#include <map>
+#include <cstdlib>
+#include <vector>
+using namespace std;
+
+int yylex(); 
+int yyerror(const char *p) { cerr << "Error!" << endl; return -1;}
+
+%}
+
+%token indificator
+%token argname
+%token ls
+%token rs
+%token ravno
+%token point
+%token comma
+%token semicolon
+
+%right comma
+%right semicolon
+
+%union {
+  int val; 
+};
+
+%%
+
+EVALUATE: atoms {cout << "final" << endl;}; 
+
+atoms: atom {cout << "one atom atoms\n";};
+| atoms atom {cout << "atoms many\n";};
+
+atom_small: indificator arguments {cout << "atom_small\n";};
+
+arguments:  {cout << "arg empty\n";};
+| arguments argname {cout << "argname with args\n";};
+| arguments ls atom_small rs {cout << "args atom\n";};
+
+atom: atom_small body point {cout << "atom with args\n";};
+| atom_small point {cout << "atom with args no body\n";};
+
+args_list:
+argname {cout << "args_list only name\n";};	
+| ls func rs {cout << "args_list only func\n";};
+| args_list argname	{cout << "args_list = args_list argname\n";};
+| args_list	ls func rs {cout << "ls func rs\n";};
+
+func: indificator args_list {cout << "func = arg list\n";};
+| func comma func {cout << "func, func" << endl;};
+| func semicolon func {cout << "func; func" << endl;};
+
+body: ravno func {};
+%%
+
+int main(int argc, char* argv[]) {
+  yyparse();
+  return 0;
+}
