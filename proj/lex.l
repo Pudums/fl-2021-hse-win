@@ -1,5 +1,6 @@
 %{
 #include "gram.tab.hpp"
+
 %}
 
 %option yylineno
