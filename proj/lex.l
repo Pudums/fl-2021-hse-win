@@ -7,19 +7,21 @@
 %option noyywrap
 
 %%
-[a-z][a-zA-Z0-9]*	{cout << "lexindif\n";return indificator;}
-[A-Z][a-zA-Z0-9]*	{cout << "lexname\n";return argname;}
+[a-z][a-zA-Z0-9]*	{yylval.name_ = new string(yytext);return indificator;}
+[A-Z][a-zA-Z0-9]*	{yylval.name_ = new string(yytext);return argname;}
 
-"("	{cout << "lex ls\n";return ls;}
-")"	{cout << "lex rs\n";return rs;}
-"."	{cout << "lex point\n"; return point;}
-","	{cout << "lex comma\n"; return comma;}
-";"	{cout << "lex semicolon\n"; return semicolon;}
+"("	{return ls;}
+")"	{return rs;}
+"."	{return point;}
+","	{return comma;}
+";"	{return semicolon;}
+"?" {return question;}
 
-":-"	{cout << "lex :-"; return ravno;}
+":-"	{return ravno;}
 
 [ \t\n]+ {}
 <<EOF>>  {return 0;}
 
 . {cout << "char err = " << *yytext << endl;}
 %%
+

@@ -4,6 +4,7 @@
 #include <map>
 #include <cstdlib>
 #include <vector>
+#include "my.h"
 using namespace std;
 
 int yylex(); 
@@ -11,49 +12,65 @@ int yyerror(const char *p) { cerr << "Error!" << endl; return -1;}
 
 %}
 
-%token indificator
-%token argname
+%union {
+  string *name_;
+  Atom_smal *a_s_;
+  Arguments *args_;
+  Func *func_;
+  Arg_list *a_l_;
+  Atom *atom_;
+  vector<Atom *> *atoms_;
+};
+
+%token<name_> indificator
+%token<name_> argname
 %token ls
 %token rs
 %token ravno
 %token point
 %token comma
 %token semicolon
+%token question
+
+%type<a_s_> atom_small
+%type<args_> arguments
+%type<func_> func body
+%type<a_l_> args_list
+%type<atom_> atom
+%type<atoms_> atoms
 
 %right comma
 %right semicolon
 
-%union {
-  int val; 
-};
-
 %%
 
-EVALUATE: atoms {cout << "final" << endl;}; 
+EVALUATE: atoms question func point {result(*$1, *$3);}; 
 
-atoms: atom {cout << "one atom atoms\n";};
-| atoms atom {cout << "atoms many\n";};
+atoms: atom {$$ = new vector<Atom *> (1, $1);};
+| atoms atom {$$ = $1; $$->push_back($2);};
 
-atom_small: indificator arguments {cout << "atom_small\n";};
+atom_small: indificator arguments {$$ = new Atom_smal(*$1, $2);};
 
-arguments:  {cout << "arg empty\n";};
-| arguments argname {cout << "argname with args\n";};
-| arguments ls atom_small rs {cout << "args atom\n";};
+arguments:  {$$ = new Arguments();};
+| arguments argname {swap($$, $1); $$->add_name(*$2);};
+| arguments ls atom_small rs {swap($$, $1); $$->add_a_s(*$3);};
+| arguments indificator {swap($$, $1); $$->add_name(*$2);};
 
-atom: atom_small body point {cout << "atom with args\n";};
-| atom_small point {cout << "atom with args no body\n";};
+atom: atom_small body point {$$ = new Atom($1, $2);};
+| atom_small point {$$ = new Atom($1);};
 
 args_list:
-argname {cout << "args_list only name\n";};	
-| ls func rs {cout << "args_list only func\n";};
-| args_list argname	{cout << "args_list = args_list argname\n";};
-| args_list	ls func rs {cout << "ls func rs\n";};
+argname {$$ = new Arg_list(); $$->add_name(*$1);};	
+| args_list indificator {swap($$, $1); $$->add_name(*$2);};
+| ls func rs {$$ = new Arg_list(); $$->add_func($2);};
+| args_list argname	{swap($$, $1); $$->add_name(*$2);};
+| args_list	ls func rs {swap($$, $1); $$->add_func($3);};
 
-func: indificator args_list {cout << "func = arg list\n";};
-| func comma func {cout << "func, func" << endl;};
-| func semicolon func {cout << "func; func" << endl;};
+func: indificator args_list {$$ = new Func($1, $2);};
+| func comma func {swap($$, $1); $$->add_and_func($3);};
+| func semicolon func {swap($$, $1); $$->add_or_func($3);};
 
-body: ravno func {};
+body: ravno func {swap($$, $2);};
 %%
 
 int main(int argc, char* argv[]) {

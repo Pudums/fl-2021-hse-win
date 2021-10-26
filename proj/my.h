@@ -1,26 +1,57 @@
 #ifndef MY__H__
 #define MY__H__
 
-#include <vector>
-#include <map>
 #include <string>
+#include <map>
 #include <iostream>
-using std::vector, std::map, std::string, std::endl, std::cout;
+#include <vector>
+#include <any>
 
-struct Station {
-	int id;
-	char type;
-	Station(int a = 0, char b = 0);
+using namespace std;
+struct Arguments;
+
+struct Atom_smal {
+    string name;
+    Arguments *args;
+
+    Atom_smal(string s = "", Arguments *arg = nullptr);
 };
 
-struct Edges {
-	int id1, id2;
-	vector<char> edges;
-	Edges(int a, int b, vector<char> &c);
+struct Arguments {
+    vector<any> args; // name/Atom_smal
+    void add_name(string &s);
+    void add_a_s(Atom_smal &a_s);
 };
 
+struct Func;
 
-void resave(const vector<char> &symbs, vector<Station> &sts, const vector<Edges> &eds);
+struct Arg_list {
+    vector<any> args; // name/*FUNC
+    void add_name(string &s);
+    void add_func(Func *);
+};
 
-bool check(const string &s);
+struct Atom;
+
+struct Func {
+    vector<pair<bool, Func *>> vec;
+    Arg_list *arg_l;
+    string name;
+    Func(string *s, Arg_list *);
+
+    void add_and_func(Func *);
+    void add_or_func(Func *);
+    Func *complete(Atom *);
+};
+
+struct Atom {
+    Atom_smal *a_s;
+    Func *func = nullptr;
+    Atom(Atom_smal *);
+    Atom(Atom_smal *, Func *);
+};
+
+void print(map<string, string> mp);
+void result(vector<Atom *> &atoms, Func f);
+
 #endif

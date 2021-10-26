@@ -1,103 +1,150 @@
 #include "my.h"
-#include <set>
-#include <algorithm>
-using namespace std;
+#include <sstream>
 
-vector<bool> alph(256, false);
-vector<map<char, Station*> > g;
-map<int, Station*> st_min_id;
-Station start(-1, 0);
-bool ready = false;
+namespace {
 
-bool operator<(const Station &lhs, const Station &rhs) {
-	return lhs.id < rhs.id;
+int color = 30;
+int bg = 41;
+
+vector<Atom *> atoms;
+
+void set_next() {
+    cout << "\033[" << color << ";" << bg << ";1" << 'm';
+    if (color == 37) {
+        color = 30;
+        bg++;
+    } else {
+        if(10 + (++color) == bg) {
+            color++;
+        }
+    }
 }
 
-Station::Station(int a, char b) : id(a), type(b) {
+void set_prev() {
+    cout << "\033[" << color << ";" << bg << ";1" << 'm';
+    if (color == 30) {
+        color = 37;
+        bg--;
+    } else {
+        if(10 + (--color) == bg) {
+            color--;
+        }
+    }
+}
 }
 
-Edges::Edges(int a, int b, vector<char> &c): id1(a), id2(b), edges(std::move(c)) {
+void Arguments::add_name(string &s) {
+    args.push_back(any (s));
 }
 
-void resave(const vector<char> &symbs, vector<Station> &sts, const vector<Edges> &eds) {
-	for(unsigned char c: symbs) {
-		if(alph[c] == true) {
-			cout << "Double symbol, id = " << int(c) << endl;
-			return;
-		}
-		alph[c] = true;
-	}
-
-	sort(sts.begin(), sts.end());
-	for(int i = 0; i < sts.size() - 1; i++) {
-		if(sts[i].id == sts[i+1].id) {
-			cout << "same index of q\n";
-			return;
-		}
-
-		if(sts[i].type == 's') {
-			if(start.id != -1) {
-				cout << "Double start\n";
-				return;
-			}
-			start = Station(i, sts[i].type);
-		}
-
-		st_min_id[sts[i].id] = new Station(i, sts[i].type);
-	}
-		int i = sts.size()-1;
-		if(sts[i].type == 's') {
-			if(start.id != -1) {
-				cout << "Double start\n";
-				return;
-			}
-			start = Station(i, sts[i].type);
-		}
-
-		st_min_id[sts[i].id] = new Station(i, sts[i].type);
-
-	g.resize(sts.size());
-	for(auto edges: eds) {
-		auto v = st_min_id[edges.id1], 
-			u = st_min_id[edges.id2];
-		for(char edge: edges.edges) {
-			if(g[v->id].count(edge) > 0) {
-				cout << "same edges\n";
-				return;
-			}
-			g[v->id][edge] = u;
-		}
-	}
-
-	if(start.id == -1) {
-		cout << "no start\n";
-		return;
-	}
-
-	ready = true;
-
-	for(auto &mp : g) {
-		for(int i = 0; i < symbs.size(); i++) {
-			if(symbs[i] && mp.find(symbs[i]) == mp.end()) {
-				cout << "not full automat\n";
-				return;
-			}
-		}
-	}
+void Arguments::add_a_s(Atom_smal &a_s) {
+    args.push_back(any (a_s));
 }
 
-bool check(const string &s) {
-	if(!ready) {
-		cout << "Automat isn't correct\n";
-		return false;
-	}
-	for(auto c: s) {
-		if(g[start.id].find(c) == g[start.id].end()) {
-			cout << "No edge " << c << '\n';
-			return false;
-		}
+Atom_smal::Atom_smal(string s, Arguments *arg) : name(s), args(arg) {
+}
 
-		start = *g[start.id][c];
-	}
-	return start.type == 't';
+Func::Func(string *s, Arg_list *a) : arg_l(a), name(*s) {
+}
+
+void Arg_list::add_name(string &s) {
+    args.push_back(any(s));
+}
+
+void Arg_list::add_func(Func *f) {
+    args.push_back(any(f));
+}
+
+void Func::add_and_func(Func *f) {
+    vec.push_back({false, f});
+}
+
+void Func::add_or_func(Func *f) {
+    vec.push_back({true, f});
+}
+
+Atom::Atom(Atom_smal *a_s_) : a_s(a_s_) {
+}
+
+Atom::Atom(Atom_smal *a_s_, Func *f) : a_s(a_s_), func(f) {
+}
+
+Func *check(Func f, Atom *a) {
+    if(f.name != a->a_s->name) return nullptr;
+    Arg_list *args = new Arg_list();
+    for(int i = 0; i < a->func->arg_l->args.size();i++) {
+        any an = a->func->arg_l->args[i];
+        Func *f1;
+        string s;
+        bool flag;
+        try {
+            f1 = any_cast<Func *> (an);
+            flag = true;
+        } catch (...) {
+            flag = false;
+        }
+        if(!flag) {
+            s = any_cast<string> (an);
+            continue;
+        }
+    }
+    return new Func(new string("s"), NULL);
+}
+
+void evaluate(Func f) {
+    for(Atom *a: atoms) {
+        if(check(f, a)) {
+            set_next();
+            cout << "Yes\n";
+        }
+    }
+}
+
+string get_str(any a) {
+    try{
+        return any_cast<string> (a);
+    }catch(...) {
+        cerr << "CAST ERROR\n";
+        return "";
+    }
+}
+
+Func *get_func(any a) {
+    try {
+        return any_cast<Func *> (a);
+    }catch (...) {
+        return nullptr;
+    }
+}
+
+Func *Func::complete(Atom *a) {
+    if(name != a->a_s->name || a->a_s->args->args.size() != arg_l->args.size()) return nullptr;
+
+    map<any, any> mp;
+    for(int i = 0;i<a->a_s->args->args.size();i++){
+        any an = a->a_s->args->args[i];
+        any myan = arg_l->args[i];
+        if(Func *f = get_func(an)) {
+        } else {
+            string nm = get_str(an);
+            mp[any(nm)] = myan;
+        }
+    }
+
+    Arg_list *args = new Arg_list();
+    for(int i = 0; i < a->func->arg_l->args.size();i++) {
+        any an = a->func->arg_l->args[i];
+        string s;
+        if(Func *f = get_func(an)) {
+        } else {
+            string s = get_str(an);
+        }
+    }
+    return new Func(new string("s"), NULL);
+}
+
+void result(vector<Atom *> &atoms_, Func f) {
+    cout << "Start:\n";
+    atoms = atoms_;
+    evaluate(f);
 }

@@ -5,5 +5,5 @@ flex lex.l
 g++ lex.yy.c my.cpp
 rm gram.tab.hpp
 rm lex.yy.c
-./a.out
+./a.out < d.in
 rm a.out
