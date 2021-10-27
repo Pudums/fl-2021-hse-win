@@ -5,5 +5,13 @@ flex lex.l
 g++ lex.yy.c my.cpp
 rm gram.tab.hpp
 rm lex.yy.c
-./a.out < d.in
+for ii in $(cat tests/test.list)
+do
+	echo $ii
+	i="tests/"$ii".in"
+    ./a.out < $i
+    echo "-----------------------------------------------"
+    echo ""
+    echo ""
+done
 rm a.out

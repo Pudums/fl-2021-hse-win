@@ -91,4 +91,8 @@ void result(vector<Atom *> &atoms_, Func f) {
         i->print();
         cout << endl;
     }
+
+    cout << "? ";
+    f.print();
+    cout << endl;
 }

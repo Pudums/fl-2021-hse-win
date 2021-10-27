@@ -1,0 +1,4 @@
+fst (pair A B) :- var A.
+snd (pair A B) :- var B.
+
+? ravno (snd (pair X Y)) (fst (pair X Y)).

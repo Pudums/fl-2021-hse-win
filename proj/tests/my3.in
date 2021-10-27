@@ -1,0 +1,6 @@
+readservers File.
+
+pingAll (cons A Empty) :- ping A.
+pingAll (cons A B) :- ping A; pingAll B.
+
+? pingAll (readservers File).

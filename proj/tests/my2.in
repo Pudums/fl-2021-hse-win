@@ -1,0 +1,8 @@
+find (cons X Empty) X.
+find (cons X Y) X.
+find (cons X Y) Z :- find Y Z.
+
+take zero X :- cons Empty.
+take N (cons X Y):- cons X (take (minus N) Y).
+
+? find (take Ten (cons Five (cons Six Empty))) Six.
